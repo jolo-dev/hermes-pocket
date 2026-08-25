@@ -1,0 +1,15 @@
+.dart_tool/
+.flutter-plugins*
+.idea/
+.packages
+.pytest_cache/
+.venv/
+__pycache__/
+*.py[cod]
+build/
+coverage/
+dist/
+node_modules/
+cdk.out/
+android/local.properties
+ios/Flutter/ephemeral/

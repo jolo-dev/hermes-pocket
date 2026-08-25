@@ -1,0 +1,259 @@
+openapi: 3.1.0
+info:
+  title: Hermes Pocket Mobile Facade
+  version: 1.0.0
+  description: Backend-neutral authenticated API. All schemas fail closed on undeclared fields.
+servers:
+  - url: https://facade.invalid/v1
+security:
+  - deviceBearer: []
+paths:
+  /version:
+    get:
+      security: []
+      operationId: getVersionInfo
+      responses:
+        "200":
+          description: Supported API and capabilities
+          content:
+            application/json:
+              schema:
+                $ref: ../schemas/v1/mobile-api.schema.json#/$defs/VersionInfo
+        "406":
+          $ref: "#/components/responses/Error"
+  /pairing/inspect:
+    post:
+      security: []
+      operationId: inspectPairingCode
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: ../schemas/v1/mobile-api.schema.json#/$defs/PairingCodeInspectionRequest
+      responses:
+        "200":
+          description: Unclaimed backend identity and requested capabilities
+          content:
+            application/json:
+              schema:
+                $ref: ../schemas/v1/mobile-api.schema.json#/$defs/PairingCodeInspection
+        "400":
+          $ref: "#/components/responses/Error"
+  /pairing/claim:
+    post:
+      security: []
+      operationId: claimPairingCode
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: ../schemas/v1/mobile-api.schema.json#/$defs/PairingClaimRequest
+      responses:
+        "201":
+          description: Device-bound session
+          content:
+            application/json:
+              schema:
+                $ref: ../schemas/v1/mobile-api.schema.json#/$defs/DeviceSession
+        "409":
+          $ref: "#/components/responses/Error"
+  /conversations/{conversation_id}/messages:
+    post:
+      operationId: sendMessage
+      parameters:
+        - $ref: "#/components/parameters/ConversationId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: ../schemas/v1/mobile-api.schema.json#/$defs/MessageCommand
+      responses:
+        "202":
+          description: Message accepted for streaming
+        "400":
+          $ref: "#/components/responses/Error"
+  /conversations/{conversation_id}/context-shares:
+    post:
+      operationId: shareContext
+      parameters:
+        - $ref: "#/components/parameters/ConversationId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: ../schemas/v1/mobile-api.schema.json#/$defs/ContextShareCommand
+      responses:
+        "202":
+          description: Reviewed context accepted
+        "400":
+          $ref: "#/components/responses/Error"
+  /events:
+    get:
+      operationId: streamEvents
+      parameters:
+        - name: Last-Event-ID
+          in: header
+          required: false
+          schema:
+            type: string
+            maxLength: 128
+      responses:
+        "200":
+          description: Ordered event stream; each data field is an EventEnvelope
+          content:
+            text/event-stream:
+              schema:
+                type: string
+        "401":
+          $ref: "#/components/responses/Error"
+  /events/sync:
+    get:
+      operationId: syncEvents
+      parameters:
+        - name: after_sequence
+          in: query
+          required: true
+          schema:
+            type: integer
+            minimum: 0
+      responses:
+        "200":
+          description: Polling fallback events
+          content:
+            application/json:
+              schema:
+                type: array
+                maxItems: 200
+                items:
+                  $ref: ../schemas/v1/mobile-api.schema.json#/$defs/EventEnvelope
+  /approvals:
+    get:
+      operationId: listApprovals
+      responses:
+        "200":
+          description: Approval inbox entries
+          content:
+            application/json:
+              schema:
+                type: array
+                maxItems: 200
+                items:
+                  $ref: ../schemas/v1/mobile-api.schema.json#/$defs/Approval
+  /approvals/{approval_id}/decision:
+    post:
+      operationId: resolveApproval
+      parameters:
+        - name: approval_id
+          in: path
+          required: true
+          schema:
+            type: string
+            maxLength: 128
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: ../schemas/v1/mobile-api.schema.json#/$defs/ApprovalDecision
+      responses:
+        "200":
+          description: Idempotent resolution outcome
+          content:
+            application/json:
+              schema:
+                $ref: ../schemas/v1/mobile-api.schema.json#/$defs/Approval
+        "409":
+          $ref: "#/components/responses/Error"
+  /tasks:
+    get:
+      operationId: listTasks
+      responses:
+        "200":
+          description: Questions, drafts, reminders, tasks, and outcomes
+          content:
+            application/json:
+              schema:
+                type: array
+                maxItems: 200
+                items:
+                  $ref: ../schemas/v1/mobile-api.schema.json#/$defs/Task
+  /privacy/records:
+    get:
+      operationId: listPrivacyRecords
+      responses:
+        "200":
+          description: Inspectable facade record metadata
+          content:
+            application/json:
+              schema:
+                type: array
+                maxItems: 1000
+                items:
+                  $ref: ../schemas/v1/mobile-api.schema.json#/$defs/PrivacyRecord
+    delete:
+      operationId: deletePrivacyRecords
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: ../schemas/v1/mobile-api.schema.json#/$defs/PrivacyDeleteCommand
+      responses:
+        "204":
+          description: Selected records deleted
+        "400":
+          $ref: "#/components/responses/Error"
+  /privacy/memory-consent:
+    put:
+      operationId: setMemoryConsent
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: ../schemas/v1/mobile-api.schema.json#/$defs/MemoryConsentCommand
+      responses:
+        "204":
+          description: Consent updated
+        "400":
+          $ref: "#/components/responses/Error"
+  /devices/{device_session_id}:
+    delete:
+      operationId: revokeDevice
+      parameters:
+        - name: device_session_id
+          in: path
+          required: true
+          schema:
+            type: string
+            maxLength: 128
+      responses:
+        "204":
+          description: Device revoked and push association removed
+        "401":
+          $ref: "#/components/responses/Error"
+components:
+  securitySchemes:
+    deviceBearer:
+      type: http
+      scheme: bearer
+      bearerFormat: opaque-device-access-token
+  parameters:
+    ConversationId:
+      name: conversation_id
+      in: path
+      required: true
+      schema:
+        type: string
+        maxLength: 128
+  responses:
+    Error:
+      description: Structured content-free error
+      content:
+        application/json:
+          schema:
+            $ref: ../schemas/v1/mobile-api.schema.json#/$defs/Error

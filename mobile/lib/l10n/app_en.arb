@@ -1,0 +1,18 @@
+{
+  "@@locale": "en",
+  "appName": "Hermes Pocket",
+  "navigationHome": "Conversations",
+  "navigationInbox": "Inbox",
+  "navigationSettings": "Privacy",
+  "primaryNavigationLabel": "Primary navigation",
+  "homePrivacyMessage": "Private assistance, under your control.",
+  "inboxEmptyMessage": "Approvals, questions, drafts, and outcomes will appear here.",
+  "settingsPrivacyMessage": "Inspect permissions, paired devices, memory, and retained data.",
+  "languageSettingsTitle": "Language preferences",
+  "interfaceLanguageLabel": "Interface language",
+  "replyLanguageLabel": "Agent reply language",
+  "replyLanguageHelp": "This does not change the interface language.",
+  "languageEnglish": "English",
+  "languageVietnamese": "Vietnamese",
+  "languageGerman": "German"
+}

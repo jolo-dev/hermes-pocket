@@ -1,0 +1,5 @@
+{
+  "enabled_adapters": ["strands"],
+  "planned_adapters": [],
+  "advertised_compatibility": ["strands"]
+}

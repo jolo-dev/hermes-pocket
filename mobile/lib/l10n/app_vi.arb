@@ -1,0 +1,18 @@
+{
+  "@@locale": "vi",
+  "appName": "Hermes Pocket",
+  "navigationHome": "Cuoc tro chuyen",
+  "navigationInbox": "Hop thu",
+  "navigationSettings": "Quyen rieng tu",
+  "primaryNavigationLabel": "Dieu huong chinh",
+  "homePrivacyMessage": "Tro giup rieng tu, do ban kiem soat.",
+  "inboxEmptyMessage": "Phe duyet, cau hoi, ban nhap va ket qua se xuat hien o day.",
+  "settingsPrivacyMessage": "Kiem tra quyen, thiet bi da ghep noi, bo nho va du lieu.",
+  "languageSettingsTitle": "Tuy chon ngon ngu",
+  "interfaceLanguageLabel": "Ngon ngu giao dien",
+  "replyLanguageLabel": "Ngon ngu tra loi cua tac nhan",
+  "replyLanguageHelp": "Tuy chon nay khong thay doi ngon ngu giao dien.",
+  "languageEnglish": "Tieng Anh",
+  "languageVietnamese": "Tieng Viet",
+  "languageGerman": "Tieng Duc"
+}

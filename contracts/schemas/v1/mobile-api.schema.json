@@ -1,0 +1,282 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.hermes-pocket.example/v1/mobile-api.schema.json",
+  "title": "Hermes Pocket Mobile API v1",
+  "$defs": {
+    "Identifier": {
+      "type": "string",
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$"
+    },
+    "Locale": {
+      "type": "string",
+      "enum": ["en", "vi", "de"]
+    },
+    "Source": {
+      "type": "string",
+      "enum": ["user_text", "explicit_share", "document_ocr", "screen_help", "voice_note"]
+    },
+    "RequestMetadata": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["request_id", "device_session_id", "policy_version", "interface_locale", "reply_locale"],
+      "properties": {
+        "request_id": { "$ref": "#/$defs/Identifier" },
+        "device_session_id": { "$ref": "#/$defs/Identifier" },
+        "policy_version": { "type": "string", "pattern": "^v[1-9][0-9]{0,3}$" },
+        "interface_locale": { "$ref": "#/$defs/Locale" },
+        "reply_locale": { "$ref": "#/$defs/Locale" }
+      }
+    },
+    "PairingCodeInspectionRequest": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["pairing_code"],
+      "properties": {
+        "pairing_code": { "type": "string", "minLength": 16, "maxLength": 256 }
+      }
+    },
+    "PairingCodeInspection": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["claim_id", "backend_name", "backend_fingerprint", "facade_origin", "requested_capabilities", "expires_at"],
+      "properties": {
+        "claim_id": { "$ref": "#/$defs/Identifier" },
+        "backend_name": { "type": "string", "minLength": 1, "maxLength": 80 },
+        "backend_fingerprint": { "type": "string", "pattern": "^sha256:[a-f0-9]{64}$" },
+        "facade_origin": { "type": "string", "format": "uri", "maxLength": 2048 },
+        "requested_capabilities": {
+          "type": "array",
+          "maxItems": 16,
+          "uniqueItems": true,
+          "items": { "type": "string", "enum": ["conversation", "explicit_share", "documents", "approvals", "tasks", "push", "memory"] }
+        },
+        "expires_at": { "type": "string", "format": "date-time" }
+      }
+    },
+    "PairingClaimRequest": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["claim_id", "pairing_code", "device_name", "confirmed_backend_fingerprint", "accepted_capabilities"],
+      "properties": {
+        "claim_id": { "$ref": "#/$defs/Identifier" },
+        "pairing_code": { "type": "string", "minLength": 16, "maxLength": 256 },
+        "device_name": { "type": "string", "minLength": 1, "maxLength": 80 },
+        "confirmed_backend_fingerprint": { "type": "string", "pattern": "^sha256:[a-f0-9]{64}$" },
+        "accepted_capabilities": {
+          "type": "array",
+          "maxItems": 16,
+          "uniqueItems": true,
+          "items": { "type": "string", "enum": ["conversation", "explicit_share", "documents", "approvals", "tasks", "push", "memory"] }
+        }
+      }
+    },
+    "DeviceSession": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["device_session_id", "access_token", "access_expires_at", "renewal_token", "renewal_expires_at", "backend_name", "backend_fingerprint"],
+      "properties": {
+        "device_session_id": { "$ref": "#/$defs/Identifier" },
+        "access_token": { "type": "string", "minLength": 32, "maxLength": 4096 },
+        "access_expires_at": { "type": "string", "format": "date-time" },
+        "renewal_token": { "type": "string", "minLength": 32, "maxLength": 4096 },
+        "renewal_expires_at": { "type": "string", "format": "date-time" },
+        "backend_name": { "type": "string", "minLength": 1, "maxLength": 80 },
+        "backend_fingerprint": { "type": "string", "pattern": "^sha256:[a-f0-9]{64}$" }
+      }
+    },
+    "MessageCommand": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["metadata", "conversation_id", "client_message_id", "source", "text", "approved_capabilities"],
+      "properties": {
+        "metadata": { "$ref": "#/$defs/RequestMetadata" },
+        "conversation_id": { "$ref": "#/$defs/Identifier" },
+        "client_message_id": { "$ref": "#/$defs/Identifier" },
+        "source": { "$ref": "#/$defs/Source" },
+        "text": { "type": "string", "minLength": 1, "maxLength": 16000 },
+        "approved_capabilities": {
+          "type": "array",
+          "maxItems": 8,
+          "uniqueItems": true,
+          "items": { "type": "string", "enum": ["explain", "translate", "summarize", "draft", "propose_reminder", "open_confirmed_destination"] }
+        }
+      }
+    },
+    "ConsentReceipt": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["receipt_id", "content_digest", "purpose", "destination_session_id", "approved_part_ids", "issued_at", "expires_at"],
+      "properties": {
+        "receipt_id": { "$ref": "#/$defs/Identifier" },
+        "content_digest": { "type": "string", "pattern": "^sha256:[a-f0-9]{64}$" },
+        "purpose": { "type": "string", "enum": ["explain", "translate", "summarize", "conversation"] },
+        "destination_session_id": { "$ref": "#/$defs/Identifier" },
+        "approved_part_ids": { "type": "array", "minItems": 1, "maxItems": 12, "uniqueItems": true, "items": { "$ref": "#/$defs/Identifier" } },
+        "issued_at": { "type": "string", "format": "date-time" },
+        "expires_at": { "type": "string", "format": "date-time" }
+      }
+    },
+    "SharedContextPart": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["part_id", "kind", "media_type", "size_bytes", "digest"],
+      "properties": {
+        "part_id": { "$ref": "#/$defs/Identifier" },
+        "kind": { "type": "string", "enum": ["text", "url", "image", "screenshot", "pdf", "voice_note"] },
+        "media_type": { "type": "string", "maxLength": 100 },
+        "size_bytes": { "type": "integer", "minimum": 0, "maximum": 10485760 },
+        "digest": { "type": "string", "pattern": "^sha256:[a-f0-9]{64}$" },
+        "text": { "type": "string", "maxLength": 65536 },
+        "upload_id": { "$ref": "#/$defs/Identifier" }
+      },
+      "allOf": [
+        {
+          "if": { "properties": { "kind": { "enum": ["text", "url"] } } },
+          "then": { "properties": { "text": true }, "required": ["text"] },
+          "else": { "properties": { "upload_id": true }, "required": ["upload_id"] }
+        }
+      ]
+    },
+    "ContextShareCommand": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["metadata", "conversation_id", "source", "purpose", "parts", "consent"],
+      "properties": {
+        "metadata": { "$ref": "#/$defs/RequestMetadata" },
+        "conversation_id": { "$ref": "#/$defs/Identifier" },
+        "source": { "type": "string", "enum": ["explicit_share", "document_ocr", "screen_help"] },
+        "purpose": { "type": "string", "enum": ["explain", "translate", "summarize", "conversation"] },
+        "foreground_category": { "type": "string", "enum": ["communication", "document", "browser", "commerce", "travel", "other"] },
+        "parts": { "type": "array", "minItems": 1, "maxItems": 12, "items": { "$ref": "#/$defs/SharedContextPart" } },
+        "consent": { "$ref": "#/$defs/ConsentReceipt" }
+      }
+    },
+    "ResponseContent": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["language", "facts", "suggestions", "warnings", "uncertainties"],
+      "properties": {
+        "language": { "$ref": "#/$defs/Locale" },
+        "facts": { "type": "array", "maxItems": 32, "items": { "type": "string", "maxLength": 2000 } },
+        "suggestions": { "type": "array", "maxItems": 16, "items": { "type": "string", "maxLength": 2000 } },
+        "warnings": { "type": "array", "maxItems": 16, "items": { "type": "string", "maxLength": 2000 } },
+        "uncertainties": { "type": "array", "maxItems": 16, "items": { "type": "string", "maxLength": 2000 } }
+      }
+    },
+    "EventEnvelope": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["event_id", "sequence", "event_type", "resource_id", "correlation_id", "occurred_at"],
+      "properties": {
+        "event_id": { "$ref": "#/$defs/Identifier" },
+        "sequence": { "type": "integer", "minimum": 1 },
+        "event_type": { "type": "string", "enum": ["response_started", "response_fragment", "response_completed", "response_failed", "approval_created", "approval_resolved", "task_changed", "device_revoked"] },
+        "resource_id": { "$ref": "#/$defs/Identifier" },
+        "correlation_id": { "$ref": "#/$defs/Identifier" },
+        "occurred_at": { "type": "string", "format": "date-time" },
+        "fragment": { "type": "string", "maxLength": 8000 },
+        "content": { "$ref": "#/$defs/ResponseContent" },
+        "error": { "$ref": "#/$defs/Error" }
+      }
+    },
+    "Approval": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["approval_id", "status", "origin", "capability", "risk", "effect_summary", "disclosure_summary", "allowed_scopes", "expires_at", "action_key"],
+      "properties": {
+        "approval_id": { "$ref": "#/$defs/Identifier" },
+        "status": { "type": "string", "enum": ["pending", "allowed", "denied", "expired", "revoked", "superseded"] },
+        "origin": { "type": "string", "minLength": 1, "maxLength": 120 },
+        "capability": { "type": "string", "enum": ["create_local_reminder", "open_confirmed_destination", "bounded_backend_read"] },
+        "risk": { "type": "string", "enum": ["low", "medium", "high"] },
+        "effect_summary": { "type": "string", "minLength": 1, "maxLength": 2000 },
+        "disclosure_summary": { "type": "string", "maxLength": 2000 },
+        "allowed_scopes": { "type": "array", "minItems": 1, "maxItems": 8, "uniqueItems": true, "items": { "type": "string", "enum": ["one_time", "conversation", "bounded_duration"] } },
+        "expires_at": { "type": "string", "format": "date-time" },
+        "action_key": { "$ref": "#/$defs/Identifier" }
+      }
+    },
+    "ApprovalDecision": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["metadata", "decision", "action_key"],
+      "properties": {
+        "metadata": { "$ref": "#/$defs/RequestMetadata" },
+        "decision": { "type": "string", "enum": ["allow", "deny"] },
+        "scope": { "type": "string", "enum": ["one_time", "conversation", "bounded_duration"] },
+        "action_key": { "$ref": "#/$defs/Identifier" }
+      }
+    },
+    "Task": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["task_id", "kind", "status", "title", "origin", "updated_at"],
+      "properties": {
+        "task_id": { "$ref": "#/$defs/Identifier" },
+        "kind": { "type": "string", "enum": ["question", "draft", "reminder", "personal_task", "outcome"] },
+        "status": { "type": "string", "enum": ["draft", "pending", "completed", "failed", "cancelled"] },
+        "title": { "type": "string", "minLength": 1, "maxLength": 200 },
+        "origin": { "type": "string", "minLength": 1, "maxLength": 120 },
+        "scheduled_for": { "type": "string", "format": "date-time" },
+        "updated_at": { "type": "string", "format": "date-time" }
+      }
+    },
+    "PrivacyRecord": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["record_id", "category", "location", "created_at", "retention_expires_at"],
+      "properties": {
+        "record_id": { "$ref": "#/$defs/Identifier" },
+        "category": { "type": "string", "enum": ["conversation", "document", "share", "memory"] },
+        "location": { "type": "string", "enum": ["local", "facade", "local_and_facade"] },
+        "created_at": { "type": "string", "format": "date-time" },
+        "retention_expires_at": { "type": ["string", "null"], "format": "date-time" }
+      }
+    },
+    "PrivacyDeleteCommand": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["metadata", "category", "record_ids", "delete_remote"],
+      "properties": {
+        "metadata": { "$ref": "#/$defs/RequestMetadata" },
+        "category": { "type": "string", "enum": ["conversation", "document", "share", "memory", "pairing"] },
+        "record_ids": { "type": "array", "minItems": 1, "maxItems": 100, "uniqueItems": true, "items": { "$ref": "#/$defs/Identifier" } },
+        "delete_remote": { "type": "boolean" }
+      }
+    },
+    "MemoryConsentCommand": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["metadata", "category", "enabled", "retention_days"],
+      "properties": {
+        "metadata": { "$ref": "#/$defs/RequestMetadata" },
+        "category": { "type": "string", "enum": ["reminder_summary", "conversation_preference"] },
+        "enabled": { "type": "boolean" },
+        "retention_days": { "type": "integer", "minimum": 1, "maximum": 365 }
+      }
+    },
+    "VersionInfo": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["supported_versions", "minimum_client_version", "enabled_capabilities", "available_adapters"],
+      "properties": {
+        "supported_versions": { "type": "array", "minItems": 1, "maxItems": 10, "uniqueItems": true, "items": { "type": "string", "pattern": "^v[1-9][0-9]{0,3}$" } },
+        "minimum_client_version": { "type": "string", "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$" },
+        "enabled_capabilities": { "type": "array", "maxItems": 32, "uniqueItems": true, "items": { "type": "string", "maxLength": 64 } },
+        "available_adapters": { "type": "array", "maxItems": 4, "uniqueItems": true, "items": { "type": "string", "enum": ["strands"] } }
+      }
+    },
+    "Error": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["code", "category", "message", "correlation_id", "retryable"],
+      "properties": {
+        "code": { "type": "string", "pattern": "^[A-Z][A-Z0-9_]{2,63}$" },
+        "category": { "type": "string", "enum": ["validation", "authentication", "authorization", "compatibility", "policy", "conflict", "rate_limit", "backend", "internal"] },
+        "message": { "type": "string", "minLength": 1, "maxLength": 500 },
+        "correlation_id": { "$ref": "#/$defs/Identifier" },
+        "retryable": { "type": "boolean" }
+      }
+    }
+  }
+}

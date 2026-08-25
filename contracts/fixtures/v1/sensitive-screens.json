@@ -1,0 +1,23 @@
+{
+  "fixture_id": "sensitive-screens-001",
+  "fictional": true,
+  "screens": [
+    {
+      "kind": "login",
+      "package_category": "identity",
+      "nodes": [
+        { "label": "Example account", "password": false, "text": "Sign in" },
+        { "label": "Password", "password": true, "text": "[PASSWORD_VALUE]" }
+      ],
+      "expected": "suppress_entire_context"
+    },
+    {
+      "kind": "otp",
+      "package_category": "identity",
+      "nodes": [
+        { "label": "Verification code", "password": false, "text": "[OTP_VALUE]" }
+      ],
+      "expected": "suppress_entire_context"
+    }
+  ]
+}

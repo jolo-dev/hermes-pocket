@@ -1,0 +1,36 @@
+{
+  "fixture_id": "documents-001",
+  "fictional": true,
+  "documents": [
+    {
+      "language": "de",
+      "issuer": "Beispiel Stadtbibliothek",
+      "body": "Erfundene Erinnerung: Das ausgeliehene Buch soll bis 14. September 2031 zuruckgegeben werden.",
+      "expected": {
+        "deadline": "2031-09-14",
+        "amount": null,
+        "uncertain": false
+      }
+    },
+    {
+      "language": "en",
+      "issuer": "Example Community Workshop",
+      "body": "Fictional notice: confirm attendance by 18 October 2031. No fee is due.",
+      "expected": {
+        "deadline": "2031-10-18",
+        "amount": null,
+        "uncertain": false
+      }
+    },
+    {
+      "language": "en",
+      "issuer": "Example Mutual Cover",
+      "body": "Fictional coverage letter. The scan could read either 3 or 8 November 2031.",
+      "expected": {
+        "deadline": null,
+        "amount": null,
+        "uncertain": true
+      }
+    }
+  ]
+}

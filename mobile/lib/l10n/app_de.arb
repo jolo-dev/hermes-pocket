@@ -1,0 +1,18 @@
+{
+  "@@locale": "de",
+  "appName": "Hermes Pocket",
+  "navigationHome": "Unterhaltungen",
+  "navigationInbox": "Posteingang",
+  "navigationSettings": "Datenschutz",
+  "primaryNavigationLabel": "Hauptnavigation",
+  "homePrivacyMessage": "Private Hilfe unter Ihrer Kontrolle.",
+  "inboxEmptyMessage": "Freigaben, Fragen, Entwurfe und Ergebnisse erscheinen hier.",
+  "settingsPrivacyMessage": "Berechtigungen, gekoppelte Gerate, Speicher und Daten prufen.",
+  "languageSettingsTitle": "Spracheinstellungen",
+  "interfaceLanguageLabel": "Oberflachensprache",
+  "replyLanguageLabel": "Antwortsprache des Agenten",
+  "replyLanguageHelp": "Dies andert die Oberflachensprache nicht.",
+  "languageEnglish": "Englisch",
+  "languageVietnamese": "Vietnamesisch",
+  "languageGerman": "Deutsch"
+}
