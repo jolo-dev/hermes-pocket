@@ -9,7 +9,7 @@ The initial backend is a Python Strands agent on Bedrock AgentCore Runtime, but 
 **Goals:**
 
 - Share one product model, design system, local persistence model, API client, and approval experience across iOS and Android.
-- Isolate OS-specific behavior behind narrow Dart interfaces whose native implementations return sanitized domain values.
+- Isolate OS-specific behavior behind narrow TypeScript interfaces and typed React Native native-module contracts whose Swift and Kotlin implementations return sanitized domain values.
 - Enforce consent, data minimization, prohibited-data filtering, and action restrictions before invoking any agent backend.
 - Support revocable device pairing and authenticated event delivery without distributing cloud infrastructure credentials.
 - Make backend substitution possible only through a tested adapter contract with invariant facade policy.
@@ -25,24 +25,24 @@ The initial backend is a Python Strands agent on Bedrock AgentCore Runtime, but 
 
 ## Decisions
 
-### 1. Flutter owns shared product behavior
+### 1. React Native owns shared product behavior while native projects remain first-class
 
-Create a `mobile/` Flutter application using Dart for navigation, state, API contracts, conversation rendering, approvals, privacy controls, and shared document workflow. Riverpod and GoRouter provide explicit state and routing boundaries. Adaptive Material/Cupertino components preserve platform conventions without maintaining two application implementations.
+Create a `mobile/` React Native application using TypeScript for navigation, state, generated API contracts, conversation rendering, approvals, privacy controls, and the shared document workflow. Use a React Native setup with committed and project-owned `mobile/ios/` and `mobile/android/` projects as the source of truth for native builds, targets, entitlements, manifests, signing inputs, and configuration. Expo Go is not an allowed development or acceptance environment because it cannot contain the required native targets and services. Expo development builds or EAS build tooling may be added only if the owned native projects, targets, and configuration remain committed, directly buildable, and reviewable without regeneration.
 
-Native modules are limited to operations the OS must own:
+Swift and Kotlin modules are first-class product components, not incidental plugins:
 
-| Dart boundary | Android implementation | iOS implementation |
+| TypeScript boundary | Android implementation | iOS implementation |
 |---|---|---|
-| Share intake | Intent receiver | Share Extension |
-| Document capture/OCR | Camera/ML Kit | VisionKit/Vision |
-| Credential handoff | Credential Manager | AuthenticationServices/Password AutoFill |
-| Notifications/reminders | Android notification/calendar APIs | UserNotifications/EventKit as approved |
-| External destination | Intent/deep-link resolver | Universal link/URL scheme resolver |
-| Screen help | AccessibilityService and overlay plugin | Unsupported; explicit-share guidance |
+| Share intake | Kotlin intent receiver and staging module | Swift Share Extension and App Group handoff |
+| Document capture/OCR | Kotlin camera/import and ML Kit module | Swift VisionKit/import and Vision module |
+| Credential handoff | Kotlin Credential Manager module | Swift AuthenticationServices/Password AutoFill module |
+| Notifications/reminders | Kotlin notification/calendar module | Swift UserNotifications/EventKit module as approved |
+| External destination | Kotlin intent/deep-link resolver | Swift universal-link/URL-scheme resolver |
+| Screen help | Kotlin AccessibilityService, overlay, and snapshot module | Unsupported; explicit-share guidance |
 
-Platform channels return typed, sanitized results and status codes. Raw credential-provider results and continuous accessibility events never enter Dart.
+React Native Codegen specifications define the typed native-module surface where synchronous app/native communication is required. TypeScript domain wrappers expose only bounded, sanitized tagged results and status codes. The iOS Share Extension stages approved items through the App Group for explicit app intake rather than attempting to run the shared application in the extension. Raw credential-provider results, raw accessibility node trees, continuous accessibility events, and unrestricted platform metadata never enter the JavaScript runtime.
 
-Alternatives considered: separate Compose and SwiftUI apps would maximize native control but duplicate most product and safety behavior; React Native offers similar sharing but does not reduce the required native security modules. Flutter is selected for one polished shared UI and mature native escape hatches.
+Alternatives considered: separate Compose and SwiftUI apps would maximize native UI control but duplicate most product and safety behavior. Flutter would also share UI, but React Native aligns the mobile domain and generated API client with the repository's TypeScript contracts while retaining owned native escape hatches. Expo managed workflow and Expo Go are rejected because the required Share Extension, App Group, AccessibilityService, overlay, credential, Vision, and ML Kit targets must remain committed and directly owned.
 
 ### 2. Explicit sharing is the cross-platform context baseline
 
@@ -67,9 +67,11 @@ The first adapter wraps Strands and AgentCore Runtime. Future Hermes/OpenClaw ad
 
 Alternative considered: connecting mobile directly to AgentCore or embedding backend-specific clients would expose cloud credentials, couple releases to one runtime, and allow adapter-specific policy drift.
 
-### 4. Contracts use typed envelopes and an event stream
+### 4. Contracts use generated typed envelopes and an event stream
 
-JSON contracts are versioned independently of backend adapters. Every command contains `request_id`, `device_session_id`, `policy_version`, locale/reply preferences, and an allowlisted payload. Every asynchronous result uses an event envelope with monotonically ordered conversation/event sequence, event type, resource identifier, and correlation ID.
+Canonical OpenAPI and JSON Schema documents under `contracts/` are versioned independently of backend adapters. Deterministic generation produces the TypeScript request, response, error, and event types plus the mobile API client under `mobile/src/generated/api/`; generated files are never edited by hand. The Python service validates the same schemas, and shared fixtures exercise both Python serialization and TypeScript parsing. CI regenerates contracts and fails on a dirty diff, incompatible schema changes, TypeScript compile failures, or fixture disagreement.
+
+Every command contains `request_id`, `device_session_id`, `policy_version`, locale/reply preferences, and an allowlisted payload. Every asynchronous result uses an event envelope with monotonically ordered conversation/event sequence, event type, resource identifier, and correlation ID. Native bridge contracts are separate from network contracts: React Native Codegen specs live under `mobile/src/native/specs/`, while wrappers under `mobile/src/platform/` map generated native results into the same sanitized domain model. Swift and Kotlin tests verify that undeclared fields and prohibited raw values cannot cross those boundaries.
 
 SSE is the default foreground stream because responses are server-to-client and reconnection can use the last event identifier. A polling sync endpoint is the correctness fallback. Push through APNs/FCM is only a wake-up hint containing an opaque event ID and category; full content is fetched after authentication. WebSocket support is deferred until bidirectional realtime requirements justify it.
 
@@ -102,7 +104,7 @@ Alternative considered: model-only moderation is insufficient because malicious 
 | Reminder summary memory | Device by default | Optional, inspectable, expiring opt-in |
 | Device session credential | Keychain/Keystore-backed storage | Authentication endpoints only |
 
-Use `flutter_secure_storage` for session secrets and a SQLCipher-backed local database for retained structured records. Temporary files are allocated in app-private storage, referenced by lifecycle state, and deleted after save/discard or consent expiry. The facade stores only workflow data required for synchronization and configured retention. Raw source retention is off by default.
+Use an owned TypeScript storage boundary backed by iOS Keychain and Android Keystore native access for session secrets, plus a SQLCipher-backed local database adapter for retained structured records. Secret-returning native APIs are not exposed to general JavaScript callers; the session layer receives only the bounded operations it needs. Temporary files are allocated in app-private storage, referenced by lifecycle state, and deleted after save/discard or consent expiry. The facade stores only workflow data required for synchronization and configured retention. Raw source retention is off by default.
 
 ### 7. Approvals are an idempotent state machine
 
@@ -122,7 +124,7 @@ Alternative considered: a long-lived bearer API key is simpler but is difficult 
 
 ### 9. Documents follow a local-first staged pipeline
 
-Capture/import produces local pages, platform OCR output, and confidence metadata behind one Dart interface. The review pipeline identifies candidate sensitive values and lets the user include/exclude pages, images, and text. Text-only is the default remote option. The service returns a structured explanation with facts, suggestions, warnings, and uncertainties; any reminder is created as an approval draft.
+Capture/import produces local pages, platform OCR output, and confidence metadata behind one TypeScript domain interface implemented by the Swift Vision/VisionKit and Kotlin ML Kit native modules. The review pipeline identifies candidate sensitive values and lets the user include/exclude pages, images, and text. Text-only is the default remote option. The service returns a structured explanation with facts, suggestions, warnings, and uncertainties; any reminder is created as an approval draft.
 
 Originals and working pages remain local unless explicitly selected for one request. If upload fails, the consent receipt is not reused silently. Saved local history stores only user-selected source/derived content; discard removes the working set.
 
@@ -130,7 +132,7 @@ Originals and working pages remain local unless explicitly selected for one requ
 
 The AccessibilityService is dormant as a data source until a local bubble-tap nonce starts a short capture window. It reads the active root once, skips Hermes Pocket, settings, permission, credential-provider, and configured sensitive packages/windows, excludes password nodes and descendants, sanitizes bounded text, and immediately drops node references.
 
-The preview reports app label/category, counts, redactions, and screenshot state. A separate send tap creates the normal consent receipt. Screenshot capture is independent and off by default. The service retains no event history and exposes no gesture, typing, or submission API to Dart or the backend. Disabling Screen Help tears down the overlay and clears pending snapshots.
+The preview reports app label/category, counts, redactions, and screenshot state. A separate send tap creates the normal consent receipt. Screenshot capture is independent and off by default. The service retains no event history and exposes no gesture, typing, submission, raw-node, or continuous-event API to TypeScript or the backend. Disabling Screen Help tears down the overlay and clears pending snapshots.
 
 ### 11. AgentCore deployment is server-side and least privilege
 
@@ -138,12 +140,20 @@ Package the FastAPI/Strands runtime as a container and deploy it to a confirmed 
 
 The runtime role cannot administer mobile identities or cloud infrastructure. The facade identity can invoke only the configured runtime and required data stores. Infrastructure configuration supplies account, region, model, endpoints, and push credentials; none are hard-coded in source or mobile binaries.
 
+### 12. Testing and release acceptance include shared and native layers
+
+The mobile test strategy has explicit boundaries. TypeScript unit and component tests cover domain policy, generated contract fixtures, navigation, consent, redaction summaries, accessibility semantics, and state handling. Swift XCTest suites cover the Share Extension/App Group handoff, Vision/VisionKit, AuthenticationServices, notification/reminder behavior, and native boundary sanitization. Kotlin unit and instrumentation suites cover share intents, ML Kit, Credential Manager, AccessibilityService suppression, overlay lifecycle, and native boundary sanitization.
+
+CI builds the committed iOS application and Share Extension targets with `xcodebuild`, builds the committed Android application and service configuration with Gradle, type-checks TypeScript, checks React Native Codegen and API generation for drift, and runs service contract tests. End-to-end acceptance runs against development or release builds containing the real native modules, never Expo Go. The release matrix requires common pairing, conversation, sharing, document, approval, privacy, revocation, offline, localization, and accessibility scenarios on both platforms; Android Screen Help scenarios run only on Android, while iOS acceptance instead verifies honest share/import guidance and absence of arbitrary screen inspection or overlay claims.
+
 ## Risks / Trade-offs
 
 - [Accessibility APIs can be perceived as surveillance and face store-policy restrictions] -> Make Screen Help optional, user-triggered, locally previewed, independently disableable, and initially distribute through controlled test channels pending policy review.
 - [Pattern redaction can miss secrets or over-redact useful values] -> Combine node metadata, allowlists, validated detectors, conservative rejection, red-team fixtures, and transparent redaction summaries; never promise perfect classification.
 - [Push providers observe delivery metadata] -> Send opaque identifiers only, fetch content through the authenticated facade, and allow notification previews to be disabled.
-- [Cross-platform plugins may leak behavior into shared policy] -> Keep plugins narrow, typed, and replaceable; enforce final policy at both facade and domain layers rather than inside third-party plugins.
+- [React Native packages or native bridges may leak raw platform data into shared policy] -> Keep boundaries narrow, Codegen-typed, sanitized, and replaceable; test Swift/Kotlin boundary outputs and enforce final policy at both facade and TypeScript domain layers rather than inside third-party packages.
+- [Generated network or native types can drift from runtime behavior] -> Keep canonical schemas and Codegen specs in source, regenerate deterministically in CI, fail on diffs or fixture disagreement, and require coordinated compatibility review for schema changes.
+- [Optional Expo/EAS tooling could make generated native state authoritative] -> Treat committed `ios/` and `android/` projects as source, prohibit Expo Go, review native diffs, and require direct Xcode and Gradle builds in release acceptance.
 - [AgentCore or model availability can interrupt cloud assistance] -> Preserve local capture/OCR and drafts, expose explicit offline/error states, and use resumable event synchronization without silent re-upload.
 - [Adapter abstraction can hide incompatible backend semantics] -> Keep a compact required contract, require conformance/safety tests, and do not enable or market an adapter until authentication and action semantics are verified.
 - [Multilingual output can be fluent but inaccurate] -> Preserve source excerpts where safe, separate facts from suggestions, expose confidence/uncertainty, and test representative Vietnamese, German, English, and mixed-language fixtures with speakers.
@@ -153,12 +163,12 @@ The runtime role cannot administer mobile identities or cloud infrastructure. Th
 
 There is no existing application data to migrate. Delivery is staged to reduce security and platform risk:
 
-1. Establish contracts, threat model, deterministic policy, facade, and adapter conformance tests.
-2. Deliver pairing, multilingual chat/voice, approvals, and event synchronization on both platforms.
-3. Add share intake, local document OCR, disclosure review, and reminder drafts on both platforms.
-4. Add credential handoff, notifications, and confirmed external navigation through narrow native modules.
-5. Enable Android Screen Help only in an opt-in beta after sanitizer, device, accessibility, and policy tests pass.
-6. Deploy the Strands runtime and facade to a non-production AgentCore stage, complete end-to-end safety tests, then promote immutable artifacts.
+1. Preserve the established contracts, threat model, deterministic policy, facade, and adapter conformance tests, then add deterministic TypeScript API generation and shared Python/TypeScript fixture gates.
+2. Replace the Flutter shell with the React Native TypeScript application and committed, directly buildable iOS and Android projects; establish Codegen-typed native boundaries before feature UI migration.
+3. Deliver pairing, multilingual chat/voice, approvals, privacy controls, and event synchronization on both platforms using development builds that contain the owned native modules.
+4. Implement and test first-class Swift Share Extension/App Group/Vision/AuthenticationServices modules and Kotlin share/ML Kit/Credential Manager modules, then add shared review and document workflows.
+5. Add notification/reminder and confirmed external-navigation modules, then enable Android Screen Help only in an opt-in beta after sanitizer, device, accessibility, overlay, and policy tests pass.
+6. Deploy the Strands runtime and facade to a non-production AgentCore stage, complete the shared/native/end-to-end acceptance matrix, then promote immutable artifacts built from the committed native projects.
 
 Each stage is feature-flagged at the facade and client capability level. Rollback disables the affected capability, revokes incompatible API versions if necessary, and restores the prior mobile/runtime artifact without migrating prohibited raw content. Pairing revocation and local deletion remain available during rollback.
 

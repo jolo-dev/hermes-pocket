@@ -28,7 +28,12 @@ def valid_payload() -> dict[str, Any]:
 
 def test_validates_before_backend_invocation() -> None:
     received: list[AgentInput] = []
-    gateway = InboundPolicyGateway(lambda request: received.append(request) or "accepted")
+
+    def accept(request: AgentInput) -> str:
+        received.append(request)
+        return "accepted"
+
+    gateway = InboundPolicyGateway(accept)
 
     result = gateway.submit(valid_payload())
 

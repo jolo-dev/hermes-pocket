@@ -1,107 +1,58 @@
 # Install Hermes Pocket on a Phone (Development Preview)
 
-> **Current status:** Hermes Pocket is an in-development scaffold, not a released end-user app. There is no signed public APK, TestFlight build, deployed pairing service, or production AgentCore endpoint yet. The steps below install a local development build so you can inspect the current app shell. Chat, pairing, document assistance, approvals, and Android Screen Help are not complete product features yet.
+> **Current status:** Hermes Pocket is an in-development React Native project, not a released or pairable consumer app. There is no signed public APK, TestFlight build, deployed pairing service, or production AgentCore endpoint. The current build is a local shell with generated contracts and privacy-safe TypeScript/native boundaries.
 
-## Before you begin
+Hermes Pocket uses its committed `mobile/android/` and `mobile/ios/` projects. Expo Go is not supported.
 
-You need a checkout of this repository and the pinned toolchain versions in [`.tool-versions`](../.tool-versions).
+## Shared setup
+
+Install the pinned Node.js version from [`.tool-versions`](../.tool-versions), then run:
 
 ```bash
-git clone https://github.com/jolo-dev/hermes-pocket.git
 cd hermes-pocket/mobile
+npm ci
+npm run generate:api
+npm run typecheck
+npm test
 ```
 
-Install Flutter at the repository's pinned version and run:
+## Android development build
+
+Install JDK 17, Android Studio, Android SDK platform 37, Android build tools 37.0.0, and the Android command-line tools. Set `ANDROID_HOME` according to the React Native environment guide.
+
+1. Enable Developer options and USB debugging on the phone.
+2. Connect and authorize the phone, then verify it with `adb devices`.
+3. Start Metro with `npm start`.
+4. In another terminal under `mobile/`, run `npm run android`.
+
+The owned native build can also be checked directly:
 
 ```bash
-flutter doctor
-flutter pub get
+cd android
+./gradlew assembleDebug
 ```
 
-Resolve every required Android or iOS issue reported by `flutter doctor` before continuing.
+Android Screen Help remains disabled in this build. Do not attempt to enable accessibility, overlay, or screen-capture access until its onboarding, sanitizer, preview, and device tests are implemented.
 
-## Android: install on a physical phone
+## iPhone development build
 
-1. On the phone, open **Settings → About phone** and tap **Build number** seven times to enable Developer options.
-2. Open **Settings → System → Developer options** and enable **USB debugging**.
-3. Connect the phone to the development computer with USB. Accept the phone's **Allow USB debugging** confirmation when it appears.
-4. From `hermes-pocket/mobile`, verify that Flutter can see the device:
-
-   ```bash
-   flutter devices
-   ```
-
-5. Run the development build:
-
-   ```bash
-   flutter run
-   ```
-
-   Flutter installs the debug build and starts it on the selected device. If several devices are listed, pass the desired identifier:
-
-   ```bash
-   flutter run -d <device-id>
-   ```
-
-6. To create an installable release APK after release signing is configured, run:
-
-   ```bash
-   flutter build apk --release
-   ```
-
-   The APK is written under `build/app/outputs/flutter-apk/`. Install it with Android Debug Bridge:
-
-   ```bash
-   adb install -r build/app/outputs/flutter-apk/app-release.apk
-   ```
-
-### Android safety notes
-
-- Do not enable an AccessibilityService, overlay permission, or screen capture permission for Hermes Pocket until the dedicated **Android Screen Help** feature is implemented, reviewed, and clearly presented in the app.
-- Never paste AWS credentials, agent API keys, passwords, OTPs, recovery codes, or banking/card details into the app or APK configuration.
-
-## iPhone: install on a physical device
-
-An iPhone build requires a **Mac**, Xcode, an Apple ID, and a USB-connected iPhone. It cannot be built or signed from this Linux development host.
-
-1. On a Mac, install Xcode and open it once to accept its license.
-2. Install the pinned Flutter version, clone the repository, then run:
-
-   ```bash
-   cd hermes-pocket/mobile
-   flutter doctor
-   flutter pub get
-   open ios/Runner.xcworkspace
-   ```
-
-3. In Xcode, select the **Runner** target.
-4. Under **Signing & Capabilities**, select your Apple Development Team and choose a unique bundle identifier if Xcode asks for one.
-5. Connect and unlock the iPhone. Select it as the Xcode run destination and click **Run**.
-6. If prompted on the phone, trust the developer certificate under **Settings → General → VPN & Device Management**.
-
-For a command-line run after signing is configured:
+An iPhone build requires macOS, Xcode, CocoaPods, an Apple ID, and a connected iPhone. It cannot be built or signed from a Linux host.
 
 ```bash
-flutter run -d <iphone-device-id>
+cd hermes-pocket/mobile
+npm ci
+bundle install
+bundle exec pod install --project-directory=ios
+open ios/HermesPocket.xcworkspace
 ```
 
-### iOS safety and capability notes
+In Xcode, select the `HermesPocket` scheme, choose an Apple Development Team for both `HermesPocket` and `HermesPocketShare`, replace the example App Group if required by your team, select the device, and run. The Share Extension target is present but intentionally stages nothing in this development build.
 
-- iOS does not permit a system-wide floating agent bubble or arbitrary inspection of other apps' screens. The intended iOS context-sharing route is a Share Extension, screenshot/file upload, browser extension, or direct integration.
-- Password use must remain within iOS AuthenticationServices/Password AutoFill; Hermes Pocket must never receive or retain the credential itself.
+iOS does not support arbitrary cross-app inspection or a system-wide Hermes Pocket overlay. Context must come from an explicit share, screenshot/file import, browser extension, or direct integration.
 
-## Pairing an installed build (not available yet)
+## Safety
 
-The final app will pair to an owner-controlled service using a one-time QR/device code. A phone will not connect directly to Amazon Bedrock AgentCore and will never hold AWS credentials.
-
-Until the AgentCore-backed facade and pairing flow are deployed, the development app is only a local UI preview. See the active implementation plan in [`openspec/changes/hermes-pocket-cross-platform/`](../openspec/changes/hermes-pocket-cross-platform/) for the remaining work.
-
-## Troubleshooting
-
-| Problem | What to check |
-|---|---|
-| `flutter` is not found | Install Flutter and put it on `PATH`; then run `flutter doctor`. |
-| Android phone is not listed | Reconnect USB, unlock the phone, approve USB debugging, then run `adb devices` and `flutter devices`. |
-| iPhone is not listed | Use macOS/Xcode, unlock and trust the phone, select a signing team, then run `flutter devices`. |
-| Build fails because dependencies are missing | Run `flutter pub get` from `mobile/`; do not copy credentials into `pubspec.yaml`. |
-| The app has no agent connection | Expected for now: pairing, deployment, and integrations remain incomplete. |
+- Do not add AWS, AgentCore, model-provider, APNs/FCM, signing, or backend credentials to mobile source or pairing payloads.
+- Do not enter passwords, OTPs, recovery codes, card details, or bank identifiers into development fixtures or configuration.
+- Credential use must remain inside Android Credential Manager or iOS AuthenticationServices/Password AutoFill.
+- Pairing and remote agent features are unavailable until their unchecked OpenSpec tasks are implemented and verified.

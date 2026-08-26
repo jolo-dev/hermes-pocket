@@ -1,0 +1,5 @@
+<resources>
+    <string name="app_name">Hermes Pocket</string>
+    <string name="screen_help_service_label">Android Screen Help (beta)</string>
+    <string name="screen_help_service_description">Disabled until separately enabled inside Hermes Pocket. Captures no accessibility events by default.</string>
+</resources>

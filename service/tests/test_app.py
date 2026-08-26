@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import logging
 
+from _pytest.logging import LogCaptureFixture
 from fastapi.testclient import TestClient
 
 from hermes_pocket.app import create_app
@@ -27,7 +28,7 @@ def test_invalid_request_id_is_replaced() -> None:
     assert len(response.headers["x-request-id"]) == 32
 
 
-def test_errors_are_structured_and_content_free(caplog: logging.LogCaptureFixture) -> None:
+def test_errors_are_structured_and_content_free(caplog: LogCaptureFixture) -> None:
     caplog.set_level(logging.INFO, logger="hermes_pocket.requests")
     client = TestClient(create_app(configure_service_logging=False))
     private_marker = "do-not-log-this-query-value"

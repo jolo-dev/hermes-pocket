@@ -1,7 +1,4 @@
-.dart_tool/
-.flutter-plugins*
 .idea/
-.packages
 .pytest_cache/
 .venv/
 __pycache__/
@@ -13,3 +10,11 @@ node_modules/
 cdk.out/
 android/local.properties
 ios/Flutter/ephemeral/
+.env
+.env.*
+!.env.example
+google-services.json
+GoogleService-Info.plist
+*.jks
+*.p12
+*.mobileprovision

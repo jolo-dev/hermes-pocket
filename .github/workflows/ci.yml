@@ -1,0 +1,102 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  shared:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22.23.2
+          cache: npm
+          cache-dependency-path: |
+            contracts/package-lock.json
+            infra/package-lock.json
+            mobile/package-lock.json
+      - uses: astral-sh/setup-uv@v6
+        with:
+          version: 0.12.0
+          enable-cache: true
+      - name: Install JavaScript dependencies
+        run: |
+          npm ci --prefix contracts
+          npm ci --prefix infra
+          npm ci --prefix mobile
+      - name: Validate contracts and generated client
+        run: |
+          npm test --prefix contracts
+          npm run build --prefix contracts
+          npm run generate:mobile --prefix contracts
+          git diff --exit-code -- mobile/src/generated/api
+      - name: Validate React Native shared layer
+        run: |
+          npm run typecheck --prefix mobile
+          npm run lint --prefix mobile
+          npm test --prefix mobile
+          npm run codegen --prefix mobile
+      - name: Validate service
+        working-directory: service
+        run: |
+          uv sync --frozen --extra dev
+          uv run --frozen pytest
+          uv run --frozen ruff check src tests
+          uv run --frozen mypy src tests
+      - name: Validate infrastructure
+        run: |
+          npm run build --prefix infra
+          npm test --prefix infra -- --passWithNoTests
+
+  android:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22.23.2
+          cache: npm
+          cache-dependency-path: mobile/package-lock.json
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+          cache: gradle
+      - run: npm ci
+        working-directory: mobile
+      - name: Build committed Android project
+        run: ./gradlew assembleDebug
+        working-directory: mobile/android
+
+  ios:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22.23.2
+          cache: npm
+          cache-dependency-path: mobile/package-lock.json
+      - run: npm ci
+        working-directory: mobile
+      - run: bundle install
+        working-directory: mobile
+      - run: bundle exec pod install --project-directory=ios
+        working-directory: mobile
+      - name: Build app and embedded Share Extension
+        run: >-
+          xcodebuild
+          -workspace ios/HermesPocket.xcworkspace
+          -scheme HermesPocket
+          -configuration Debug
+          -sdk iphonesimulator
+          -destination 'generic/platform=iOS Simulator'
+          CODE_SIGNING_ALLOWED=NO
+          build
+        working-directory: mobile

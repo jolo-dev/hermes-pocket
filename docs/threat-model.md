@@ -27,7 +27,7 @@ An unlocked compromised device and the content a user deliberately views are out
 
 ### Zone A: User Phone
 
-The phone owns local consent, source selection, local OCR, redaction preview, secure session storage, temporary-file cleanup, and platform integrations. Native code returns narrow sanitized domain values to Dart. Credential providers never return secrets to Hermes Pocket. A payload may leave the phone only after contract validation, prohibited-data checks, and a current consent receipt bound to its digest, purpose, destination, and expiry.
+The phone owns local consent, source selection, local OCR, redaction preview, secure session storage, temporary-file cleanup, and platform integrations. Native code returns narrow sanitized domain values to TypeScript through React Native Codegen boundaries. Credential providers never return secrets to Hermes Pocket. A payload may leave the phone only after contract validation, prohibited-data checks, and a current consent receipt bound to its digest, purpose, destination, and expiry.
 
 ### Boundary A-B: Authenticated Mobile API
 

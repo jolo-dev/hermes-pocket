@@ -4,6 +4,7 @@ import logging
 from typing import Any
 
 import pytest
+from _pytest.logging import LogCaptureFixture
 
 from hermes_pocket.policy.requests import AgentInput, InboundPolicyGateway
 from hermes_pocket.policy.sensitive import (
@@ -62,7 +63,7 @@ def test_valid_card_and_iban_are_redacted_without_labels() -> None:
 
 
 def test_sensitive_values_never_reach_model_mock_logs_or_errors(
-    caplog: logging.LogCaptureFixture,
+    caplog: LogCaptureFixture,
 ) -> None:
     caplog.set_level(logging.INFO)
     sensitive_value = "Fictional!Secret27"

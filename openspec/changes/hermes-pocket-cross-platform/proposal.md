@@ -4,12 +4,12 @@ People who run a self-hosted agent need a trustworthy mobile surface for convers
 
 ## What Changes
 
-- Add a Flutter-based iOS and Android companion with multilingual text/voice conversations, streamed responses, file sharing, and locally controlled language and privacy preferences.
+- Add a React Native and TypeScript iOS and Android companion with multilingual text/voice conversations, streamed responses, file sharing, and locally controlled language and privacy preferences.
 - Add explicit share and document flows for text, URLs, images, screenshots, and PDFs, including on-device OCR where available, preview/redaction, explanation, translation, and per-item upload consent.
 - Add an approvals inbox with push notifications for agent questions, drafts, reminder/task proposals, and completed work; sensitive actions require scoped, explicit user decisions.
 - Add QR/device-code pairing, device-bound authenticated sessions, revocation, local data inspection/deletion, and opt-in non-secret memory.
 - Add a mobile-facing FastAPI/Strands service on Bedrock AgentCore Runtime behind an authenticated facade, with a compact adapter boundary for later verified Hermes and OpenClaw integrations.
-- Add narrow Swift/iOS and Kotlin/Android modules for share extensions, OCR/scanning, notifications, credential-provider handoff, and approved deep links.
+- Add first-class Swift/iOS and Kotlin/Android modules and owned native targets for share extensions, OCR/scanning, notifications, credential-provider handoff, approved deep links, and Android Screen Help.
 - Add Android Screen Help as an opt-in beta with a user-tapped overlay, AccessibilityService sanitization, local preview, redaction, and minimized request data.
 - Define iOS context sharing through the share sheet, screenshot import, optional browser extension, and direct integrations; arbitrary cross-app inspection and system-wide overlays are not supported or presented as platform parity.
 - Prohibit capture, transmission, storage, or logging of passwords, OTPs, recovery codes, card data, and bank-account data. Credentials remain with Android Credential Manager or iOS AuthenticationServices.
@@ -33,7 +33,7 @@ None.
 
 ## Impact
 
-- Adds a `mobile/` Flutter application with limited Swift and Kotlin platform modules.
+- Adds a `mobile/` React Native and TypeScript application with committed, owned `ios/` and `android/` projects, native targets, and first-class Swift and Kotlin modules. Expo Go is not supported; Expo development builds or EAS tooling may be used only while those native projects, targets, and configuration remain committed and project-owned.
 - Adds a Python FastAPI/Strands service, versioned mobile API contracts, policy/redaction components, and Bedrock AgentCore Runtime deployment infrastructure behind an authenticated facade.
 - Introduces secure local storage, QR pairing, push notifications through APNs/FCM, local OCR adapters, share extensions/receivers, and platform credential handoff dependencies.
 - Requires privacy, threat-model, platform-disclosure, accessibility, localization, backend-contract, and end-to-end safety testing across iOS, Android, and the service.
