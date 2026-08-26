@@ -34,6 +34,8 @@ cd android
 
 Android Screen Help remains disabled in this build. Do not attempt to enable accessibility, overlay, or screen-capture access until its onboarding, sanitizer, preview, and device tests are implemented.
 
+For a complete physical-device walkthrough, see [Run Hermes Pocket on a Google Pixel](run-on-google-pixel.md).
+
 ## iPhone development build
 
 An iPhone build requires macOS, Xcode, CocoaPods, an Apple ID, and a connected iPhone. It cannot be built or signed from a Linux host.
